@@ -30,9 +30,6 @@ with open('badwords.txt', 'r') as badword:
     for words in badword:
         bad_words.append(words.strip('\n'))
 
-if os.path.exists("total_dictionary.pickle"):
-    with open('total_dictionary.pickle', 'rb') as handle:
-        users = pickle.load(handle)
 
 voicePaths = {'bullets': ['/home/ubuntu/my-bot/static/Animaker-Voice.mp3', 3], 
 'singing challenge': ['/home/ubuntu/my-bot/static/Animaker-Voice (1).mp3', 5],
@@ -130,13 +127,6 @@ class Extras(commands.Cog):
         embed.set_footer(text= "Source: ")
         await ctx.send(content=None, embed=embed)
             
-    @commands.command()
-    async def addperson(self, ctx, *args):
-        user = await commands.UserConverter().convert(ctx, args[0])
-        users[user.id] = args[1].split('#')
-        with open('total_dictionary.pickle', 'wb') as handle:
-            pickle.dump(users, handle)
-        await ctx.message.add_reaction('🍑')
     
     @commands.command()
     @commands.cooldown(1, 60, commands.BucketType.user)

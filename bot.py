@@ -9,6 +9,7 @@ import os
 from discord.utils import get
 import requests
 import json
+import pymongo
 
 with open('keys.json', 'r') as fp:
     keys = json.load(fp)
@@ -35,15 +36,16 @@ ranks = {'Iron 1': '<:Iron1:733004687141240944>',
 'Platinum 1': '<:Plat1:733004824571805772>', 
 'Platinum 2': '<:Plat2:733004851532791949>', 
 'Platinum 3': '<:Plat3:733028966557941843>'}
+conn = pymongo.MongoClient(keys['MongoDB_CONNECTION'])
+db = conn.botusers
+col = db.bot
+users = list(col.find())  
 
-if os.path.exists("total_dictionary.pickle"):
-    with open('total_dictionary.pickle', 'rb') as handle:
-        users = pickle.load(handle)
 
 async def valorantRole():
     while True:
         for name in users:
-            url = 'https://tracker.gg/valorant/profile/riot/usa/' + users[name][0] + '%23' + users[name][1] + '/overview'
+            url = 'https://tracker.gg/valorant/profile/riot/usa/' + name['Riot'][0] + '%23' + name['Riot'][1] + '/overview'
             r = requests.get(url)
             data = r.text
             firstindex = data.find('valorant-rank-bg')
@@ -52,7 +54,7 @@ async def valorantRole():
             rank = data[secondindex+10:endindex-9]
 
             guild = client.get_guild(725907147552063587)
-            user = guild.get_member(name)
+            user = guild.get_member(name['name'])
             role = discord.utils.get(guild.roles, name=rank)
             silver = get(guild.roles, name='Silver')
             bronze = get(guild.roles, name='Bronze')
@@ -137,7 +139,11 @@ async def on_guild_update(before, after):
     if not before.icon == after.icon:
         channel = client.get_channel(739626832952950916)
         role = guild.get_role(737184592691462154)
-        await channel.send(f"Server icon changed from: {before.icon} to: {after.icon} {role.mention}")
+        embed = discord.Embed(title="Server icon changed", color = 0x1d68e0)
+        role = guild.get_role(737184592691462154)
+        embed.add_field(name= 'To: ', value = '\u200b')
+        embed.set_image(url = after.icon_url)
+        await channel.send(content = role.mention, embed = embed)
 
 @client.event
 async def on_member_ban(guild, user):
@@ -151,6 +157,9 @@ async def on_member_remove(member):
     channel = client.get_channel(739626832952950916)
     role = guild.get_role(737184592691462154)
     await channel.send(f"{member.name} was kicked {role.mention}")
+
+
+
 @client.command()
 async def rank(ctx, *args):
     embed = discord.Embed(title="Valorant Ranks", color = 0x1d68e0)
@@ -158,7 +167,7 @@ async def rank(ctx, *args):
     if str(args) == '()':
         for name in users:
             try:
-                url = 'https://tracker.gg/valorant/profile/riot/usa/' + users[name][0] + '%23' + users[name][1] + '/overview'
+                url = 'https://tracker.gg/valorant/profile/riot/usa/' + name['Riot'][0] + '%23' + name['Riot'][1] + '/overview'
                 r = requests.get(url)
                 data = r.text
                 firstindex = data.find('valorant-rank-bg')
@@ -166,7 +175,7 @@ async def rank(ctx, *args):
                 endindex = data.find('<',secondindex)
                 rank = data[secondindex+10:endindex-7]
                 guild = client.get_guild(725907147552063587)
-                user = guild.get_member(name)
+                user = guild.get_member(name['name'])
                 if 'Silver' in rank:
                     embed.add_field(name= "{}{}".format(user.name, ranks[rank]), value = '{}'.format(rank), inline=False)
                 elif 'Bronze' in rank:
