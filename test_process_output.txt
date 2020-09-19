@@ -654,3 +654,515 @@ SyntaxError: invalid syntax
     async def valorantRole():
             ^
 SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax
+  File "bot.py", line 45
+    async def valorantRole():
+            ^
+SyntaxError: invalid syntax

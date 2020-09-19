@@ -17,7 +17,7 @@ with open('keys.json', 'r') as fp:
 TOKEN = keys['DISCORD_TOKEN']
 
 client = discord.Client()
-client = commands.Bot(command_prefix = ('$', '%'), case_insensitive = True)
+client = commands.Bot(command_prefix = ('$', '%','!'), case_insensitive = True)
 client.remove_command("help")
 
 messages = {}
@@ -74,7 +74,6 @@ async def valorantRole():
             await user.add_roles(role)
         await asyncio.sleep(3600)
 
-
 @client.event
 async def on_member_join(member):
     role = discord.utils.get(member.guild.roles, name='nice time')
@@ -86,7 +85,7 @@ async def on_member_join(member):
 @client.event
 async def on_message_delete(message):
     channel = client.get_channel(739626832952950916)
-    if not str(message.author.name) == 'my stummy bot':
+    if not str(message.author.name) == 'alBY':
         embed = discord.Embed(title="Message Deleted", color = 0x1d68e0)
         if not message.attachments:
             embed.add_field(name = f"{message.author.name}", value= f"deleted: **{message.content}**")
@@ -98,7 +97,7 @@ async def on_message_delete(message):
 @client.event
 async def on_message_edit(before, after):
     channel = client.get_channel(739626832952950916)
-    if not str(before.author.name) == 'my stummy bot':
+    if not str(before.author.name) == 'alBY':
         if not before.content == after.content:
             embed = discord.Embed(title="Message Edited", color = 0x1d68e0)
             embed.add_field(name = f"{before.author.name}", value = f"edited: **{before.content}**\nto: **{after.content}**")
@@ -116,16 +115,14 @@ async def membercount():
     member_count = len(guild.members)
     true_member_count = len([m for m in guild.members if not m.bot])
 
-    membercount = guild.get_channel(737373941701804130)
-    usercount = guild.get_channel(737373942825746442)
-    channelcount = guild.get_channel(737373943681384458)
-    rolecount = guild.get_channel(737373944704794746)
-    botcount = guild.get_channel(737373945937920000)
+    membercount = guild.get_channel(747664568939184189)
+    usercount = guild.get_channel(747664572030386206)
+    channelcount = guild.get_channel(747665003288461372)
+    botcount = guild.get_channel(747664574827855963)
 
     await membercount.edit(name=f"Member Count: {member_count}")
     await usercount.edit(name=f"User Count: {true_member_count}")
-    await channelcount.edit(name=f"Channel Count: {len(guild.channels)-5}")
-    await rolecount.edit(name=f"Role Count: {len(guild.roles)}")
+    await channelcount.edit(name=f"Channel Count: {len(guild.channels)-4}")
     await botcount.edit(name=f"Bot Count: {member_count-true_member_count}")
     await asyncio.sleep(3600)
 
@@ -149,14 +146,19 @@ async def on_guild_update(before, after):
 async def on_member_ban(guild, user):
     channel = client.get_channel(739626832952950916)
     role = guild.get_role(737184592691462154)
-    await channel.send(f"{user.name} was banned {role.mention}")
+    async for entry in guild.audit_logs(action=discord.AuditLogAction.ban, limit = 1):
+        await channel.send(f'{entry.user} banned {user.name} {role.mention}')
 
 @client.event
 async def on_member_remove(member):
     guild = client.get_guild(725907147552063587)
     channel = client.get_channel(739626832952950916)
     role = guild.get_role(737184592691462154)
-    await channel.send(f"{member.name} was kicked {role.mention}")
+    dm = await member.create_dm()
+    link = await channel.create_invite(max_age = 0, max_uses = 1)
+    async for entry in guild.audit_logs(limit = 1):
+        await channel.send(f'{entry.user} kicked {member.name} {role.mention}')
+    await dm.send(link)
 
 
 

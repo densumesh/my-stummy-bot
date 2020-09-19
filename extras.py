@@ -4,7 +4,6 @@ import random
 from discord.ext import commands
 from gtts import gTTS
 import os
-import pickle
 import requests
 import praw
 from googleapiclient.discovery import build
@@ -12,7 +11,10 @@ import yfinance as yf
 import matplotlib.pyplot as plt
 import psutil
 import json
-import ping3
+from better_profanity import profanity
+import smtplib
+import pymongo
+import base64
 
 with open('keys.json', 'r') as fp:
     keys = json.load(fp)
@@ -23,6 +25,11 @@ my_cse_id = keys['GOOGLE_CSE_ID']
 client = discord.Client()
 client = commands.Bot(command_prefix = ('$', '%'), case_insensitive = True)
 client.remove_command("help")
+
+conn = pymongo.MongoClient(keys['MongoDB_CONNECTION'])
+db = conn.botusers
+col = db.bot
+users = list(col.find())  
 
 plt.style.use('ggplot')
 bad_words = []
@@ -88,7 +95,7 @@ class Extras(commands.Cog):
     @commands.command()
     async def tts(self, ctx, *args):
         message = await ctx.send("Getting tts for: %s 🔎" % ' '.join(args))
-        tts = gTTS(' '.join(args), lang='en')
+        tts = gTTS(' '.join(args), lang='DE')
         fname = "_".join(' '.join(args).split()) + ".mp3"
         tts.save('/home/ubuntu/my-bot/static/'+fname)
         if ctx.voice_client is None:
@@ -239,10 +246,19 @@ class Extras(commands.Cog):
         response1 = requests.get('https://sandbox.tradier.com/v1/markets/quotes', params={'symbols': stock1, 'greeks': 'false'}, headers={'Authorization': 'Bearer RfcIci33DAu7lxb5dKUAjNKDAODy', 'Accept': 'application/json'})
         c1 = response1.json()['quotes']['quote']['change']
         return c1
-    
-    @commands.command()
-    async def ping(self, ctx, *, args):
-        print(args)
-        r = ping3.verbose_ping(args)
 
-        await ctx.send(r)
+    @commands.command()
+    async def decode(self,ctx, wtd):
+        data = base64.b64decode(wtd + "===")
+        if '@' not in data.decode('utf-8'):
+            await ctx.send(data.decode("utf-8") )
+        else:
+            await ctx.send('Stop @ing people')
+
+    @commands.command()
+    async def encode(self,ctx, *, wte):
+        data = base64.b64encode(bytes(wte, 'utf-8'))
+        if '@' not in data.decode('utf-8'):
+            await ctx.send(data.decode("utf-8"))
+        else:
+            await ctx.send('Stop @ing people')
