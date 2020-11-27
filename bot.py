@@ -3,9 +3,7 @@ import discord
 from discord.ext import commands
 from music import Music
 from extras import Extras
-from datetime import datetime
-import pickle
-import os
+import datetime
 from discord.utils import get
 import requests
 import json
@@ -14,102 +12,63 @@ import pymongo
 with open('keys.json', 'r') as fp:
     keys = json.load(fp)
 
+extensions = ['music', 'extras']
 TOKEN = keys['DISCORD_TOKEN']
-
-client = discord.Client()
-client = commands.Bot(command_prefix = ('$', '%','!'), case_insensitive = True)
+ban = False
+intents = discord.Intents.default()
+intents.members = True
+intents.presences = True
+intents.dm_messages = True
+client = discord.Client(intents=intents)
+client = commands.Bot(command_prefix=('$', '%', '!'), case_insensitive=True, intents=intents)
 client.remove_command("help")
-
 messages = {}
-ranks = {'Iron 1': '<:Iron1:733004687141240944>', 
-'Iron 2': '<:Iron2:733028968827191406>', 
-'Iron 3': '<:Iron3:733028968655224843>', 
-'Bronze 1': '<:Bronze1:733004701230170134>', 
-'Bronze 2': '<:Bronze2:733004716019023934>', 
-'Bronze 3': '<:Bronze3:733028969573646356>', 
-'Silver 1': '<:Silver1:733004733433905212>', 
-'Silver 2': '<:Silver2:733028968784986142>', 
-'Silver 3': '<:Silver3:733028968961278032>', 
-'Gold 1': '<:Gold1:733004790295953441>', 
-'Gold 2': '<:Gold2:733004810399252531>', 
-'Gold 3': '<:Gold3:733028969623847002>', 
-'Platinum 1': '<:Plat1:733004824571805772>', 
-'Platinum 2': '<:Plat2:733004851532791949>', 
-'Platinum 3': '<:Plat3:733028966557941843>'}
-conn = pymongo.MongoClient(keys['MongoDB_CONNECTION'])
-db = conn.botusers
-col = db.bot
-users = list(col.find())  
 
 
-async def valorantRole():
-    while True:
-        for name in users:
-            url = 'https://tracker.gg/valorant/profile/riot/usa/' + name['Riot'][0] + '%23' + name['Riot'][1] + '/overview'
-            r = requests.get(url)
-            data = r.text
-            firstindex = data.find('valorant-rank-bg')
-            secondindex = data.find('>', firstindex)
-            endindex = data.find('<',secondindex)
-            rank = data[secondindex+10:endindex-9]
-
-            guild = client.get_guild(725907147552063587)
-            user = guild.get_member(name['name'])
-            role = discord.utils.get(guild.roles, name=rank)
-            silver = get(guild.roles, name='Silver')
-            bronze = get(guild.roles, name='Bronze')
-            iron = get(guild.roles, name='Iron')
-            gold = get(guild.roles, name='Gold')
-            platinum = get(guild.roles, name='Platinum')
-            if silver in user.roles:
-                await user.remove_roles(silver)
-            elif bronze in user.roles:
-                await user.remove_roles(bronze)
-            elif iron in user.roles:
-                await user.remove_roles(iron)
-            elif gold in user.roles:
-                await user.remove_roles(gold)
-            elif platinum in user.roles:
-                await user.remove_roles(platinum)
-            await user.add_roles(role)
-        await asyncio.sleep(3600)
-
+def is_owner(ctx):
+    return ctx.author.id == 344597620448034818
 @client.event
 async def on_member_join(member):
     role = discord.utils.get(member.guild.roles, name='nice time')
     await member.add_roles(role)
-    if str(member) == 'el b1ACk#8323':
+    if str(member) == 'Blackimon#8323':
         role = discord.utils.get(member.guild.roles, name='PHILIMON')
         await member.add_roles(role)
+
 
 @client.event
 async def on_message_delete(message):
     channel = client.get_channel(739626832952950916)
     if not str(message.author.name) == 'alBY':
-        embed = discord.Embed(title="Message Deleted", color = 0x1d68e0)
+        embed = discord.Embed(title="Message Deleted", color=0x1d68e0)
         if not message.attachments:
-            embed.add_field(name = f"{message.author.name}", value= f"deleted: **{message.content}**")
+            embed.add_field(name=f"{message.author.name}", value=f"deleted: **{message.content}**")
         else:
-            embed.add_field(name = f"{message.author.name}", value= f"deleted:")
-            embed.set_image(url = message.attachments[0].url)
-        await channel.send(content=None, embed = embed)
+            embed.add_field(name=f"{message.author.name}", value=f"deleted:")
+            embed.set_image(url=message.attachments[0].url)
+        await channel.send(content=None, embed=embed)
+
 
 @client.event
 async def on_message_edit(before, after):
     channel = client.get_channel(739626832952950916)
     if not str(before.author.name) == 'alBY':
         if not before.content == after.content:
-            embed = discord.Embed(title="Message Edited", color = 0x1d68e0)
-            embed.add_field(name = f"{before.author.name}", value = f"edited: **{before.content}**\nto: **{after.content}**")
-            await channel.send(content=None, embed = embed)
+            embed = discord.Embed(title="Message Edited", color=0x1d68e0)
+            embed.add_field(name=f"{before.author.name}",
+                            value=f"edited: **{before.content}**\nto: **{after.content}**")
+            await channel.send(content=None, embed=embed)
+
 
 @client.event
 async def on_voice_state_update(member, before, after):
-    if (before.channel is not None and after.channel is None) or (before.channel is not None and after.channel is not None):
+    if (before.channel is not None and after.channel is None) or (
+            before.channel is not None and after.channel is not None):
         if client.user in before.channel.members and len([m for m in before.channel.members if not m.bot]) == 0:
             channel = discord.utils.get(client.voice_clients, channel=before.channel)
             await channel.disconnect()
-            
+
+
 async def membercount():
     guild = client.get_guild(725907147552063587)
     member_count = len(guild.members)
@@ -122,9 +81,10 @@ async def membercount():
 
     await membercount.edit(name=f"Member Count: {member_count}")
     await usercount.edit(name=f"User Count: {true_member_count}")
-    await channelcount.edit(name=f"Channel Count: {len(guild.channels)-4}")
-    await botcount.edit(name=f"Bot Count: {member_count-true_member_count}")
+    await channelcount.edit(name=f"Channel Count: {len(guild.channels) - 4}")
+    await botcount.edit(name=f"Bot Count: {member_count - true_member_count}")
     await asyncio.sleep(3600)
+
 
 @client.event
 async def on_guild_update(before, after):
@@ -135,93 +95,79 @@ async def on_guild_update(before, after):
         await channel.send(f"Server name changed from: {before.name} to: {after.name} {role.mention}")
     if not before.icon == after.icon:
         channel = client.get_channel(739626832952950916)
+        embed = discord.Embed(title="Server icon changed", color=0x1d68e0)
         role = guild.get_role(737184592691462154)
-        embed = discord.Embed(title="Server icon changed", color = 0x1d68e0)
-        role = guild.get_role(737184592691462154)
-        embed.add_field(name= 'To: ', value = '\u200b')
-        embed.set_image(url = after.icon_url)
-        await channel.send(content = role.mention, embed = embed)
+        embed.add_field(name='To: ', value='\u200b')
+        embed.set_image(url=after.icon_url)
+        await channel.send(content=role.mention, embed=embed)
+
 
 @client.event
 async def on_member_ban(guild, user):
-    channel = client.get_channel(739626832952950916)
-    role = guild.get_role(737184592691462154)
-    async for entry in guild.audit_logs(action=discord.AuditLogAction.ban, limit = 1):
-        await channel.send(f'{entry.user} banned {user.name} {role.mention}')
+    if user.guild.id == 725907147552063587:
+        channel = client.get_channel(739626832952950916)
+        role = guild.get_role(737184592691462154)
+        async for entry in guild.audit_logs(action=discord.AuditLogAction.ban, limit=1):
+            await channel.send(f'{entry.user} banned {user.name} {role.mention}')
 
 @client.event
 async def on_member_remove(member):
-    guild = client.get_guild(725907147552063587)
-    channel = client.get_channel(739626832952950916)
-    role = guild.get_role(737184592691462154)
-    dm = await member.create_dm()
-    link = await channel.create_invite(max_age = 0, max_uses = 1)
-    async for entry in guild.audit_logs(limit = 1):
-        await channel.send(f'{entry.user} kicked {member.name} {role.mention}')
-    await dm.send(link)
-
+    if member.guild.id == 725907147552063587:
+        guild = client.get_guild(725907147552063587)
+        general = client.get_channel(725907147606589469)
+        channel = client.get_channel(739626832952950916)
+        role = guild.get_role(737184592691462154)
+        dm = await member.create_dm()
+        link = await general.create_invite(max_age=0, max_uses=0, unique=False)
+        async for entry in guild.audit_logs(action=discord.AuditLogAction.kick, limit=1):
+            if not str(entry.user) == 'alBY#4055':
+                await channel.send(f'{entry.user} kicked {member.name} {role.mention}')
+            else:
+                await channel.send(f'{member.name} left the server {role.mention}')
+        await dm.send(link)
 
 
 @client.command()
-async def rank(ctx, *args):
-    embed = discord.Embed(title="Valorant Ranks", color = 0x1d68e0)
-    message = await ctx.send("Getting Valorant ranks🔎")
-    if str(args) == '()':
-        for name in users:
-            try:
-                url = 'https://tracker.gg/valorant/profile/riot/usa/' + name['Riot'][0] + '%23' + name['Riot'][1] + '/overview'
-                r = requests.get(url)
-                data = r.text
-                firstindex = data.find('valorant-rank-bg')
-                secondindex = data.find('>', firstindex)
-                endindex = data.find('<',secondindex)
-                rank = data[secondindex+10:endindex-7]
-                guild = client.get_guild(725907147552063587)
-                user = guild.get_member(name['name'])
-                if 'Silver' in rank:
-                    embed.add_field(name= "{}{}".format(user.name, ranks[rank]), value = '{}'.format(rank), inline=False)
-                elif 'Bronze' in rank:
-                    embed.add_field(name= "{}{}".format(user.name, ranks[rank]), value = '{}'.format(rank), inline=False)
-                elif 'Iron' in rank:
-                    embed.add_field(name= "{}{}".format(user.name, ranks[rank]), value = '{}'.format(rank), inline=False)
-                elif 'Gold' in rank:
-                    embed.add_field(name= "{}{}".format(user.name, ranks[rank]), value = '{}'.format(rank), inline=False)
-                elif 'Platinum' in rank:
-                    embed.add_field(name= "{}{}".format(user.name, ranks[rank]), value = '{}'.format(rank), inline=False)
-            except KeyError:
-                continue
-        await ctx.send(content=None, embed=embed)
-        await message.delete()
+@commands.check(is_owner)
+async def reload(ctx, extension):
+    try:
+        client.unload_extension(extension)
+        client.load_extension(extension)
+        await ctx.send('Reloaded {}'.format(extension))
+    except Exception as e:
+        await ctx.send('{} cannot be reloaded [{}]'.format(extension, e))
 
-    else:
-        try: 
-            guild = client.get_guild(725907147552063587)
-            user = guild.get_member_named(' '.join(args))
-            url = 'https://tracker.gg/valorant/profile/riot/usa/' + users[int(user.id)][0] + '%23' + users[int(user.id)][1] + '/overview'
-            r = requests.get(url)
-            data = r.text
-            firstindex = data.find('valorant-rank-bg')
-            secondindex = data.find('>', firstindex)
-            endindex = data.find('<',secondindex)
-            rank = data[secondindex+10:endindex-7]
-            embed.add_field(name= "{}{}".format(user.name, ranks[rank]), value = '{}'.format(rank), inline=False)
-            await ctx.send(content=None, embed=embed)
-            await message.delete()
-        except:
-            await message.delete()
-            await ctx.send('Person not found')
+
+@client.command()
+@commands.check(is_owner)
+async def load(ctx, extension):
+    try:
+        client.load_extension(extension)
+        await ctx.send('Loaded {}'.format(extension))
+    except Exception as e:
+        await ctx.send('{} cannot be loaded [{}]'.format(extension, e))
+
+@client.command()
+@commands.check(is_owner)
+async def unload(ctx, extension):
+    try:
+        client.unload_extension(extension)
+        await ctx.send('Unloaded {}'.format(extension))
+    except Exception as e:
+        await ctx.send('{} cannot be unloaded [{}]'.format(extension, e))
+
 
 @client.event
 async def on_ready():
-    now = datetime.now()
+    now = datetime.datetime.now()
     current_time = now.strftime("%H:%M:%S")
     print('Logged in as {} ({})'.format(client.user, current_time))
     print('------')
     game = discord.Game("$help | Carti's stummy hurts")
     await client.change_presence(activity=game)
-    client.loop.create_task(valorantRole())
     client.loop.create_task(membercount())
 
-client.add_cog(Music(client))
-client.add_cog(Extras(client))
+
+for extension in extensions:
+    client.load_extension(extension)
 client.run(TOKEN)
