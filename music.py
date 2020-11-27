@@ -1,28 +1,26 @@
 import asyncio
-from spotdl import Spotdl
-from spotdl.helpers.spotify import SpotifyHelpers
-import discord
-import random
-from discord.ext import commands
-import youtube_dl
-from googleapiclient.discovery import build
-from spotdl.lyrics.providers import Genius
-from spotdl.authorize.services import AuthorizeSpotify
 import html
-import isodate
-from spotdl.metadata_search import MetadataSearch
 import json
+import os
+import random
+from logging import ERROR
+import datetime
+import discord
+import traceback
+import isodate
+import youtube_dl
+from discord.ext import commands
+from googleapiclient.discovery import build
+from spotdl.authorize.services import AuthorizeSpotify
+from spotdl.lyrics.providers import Genius
+from spotdl.metadata_search import MetadataSearch
 
 queue = []
-loopQueue = []
-author = []
 videos = []
 urls = []
-now = []
 
 with open('keys.json', 'r') as fp:
     keys = json.load(fp)
-
 
 AuthorizeSpotify(client_id=keys['SPOTIFY_CLIENT_ID'], client_secret=keys['SPOTIFY_CLIENT_SECRET'])
 
@@ -32,28 +30,28 @@ YOUTUBE_API_VERSION = 'v3'
 
 # Suppress noise about console usage from errors
 youtube_dl.utils.bug_reports_message = lambda: ''
-
-voicePaths = {'bullets': ['/home/ubuntu/my-bot/static/Animaker-Voice.mp3', 3], 
-'singing challenge': ['/home/ubuntu/my-bot/static/Animaker-Voice (1).mp3', 5],
-'roga dong': ['/home/ubuntu/my-bot/static/ttsMP3.com_VoiceText_2020-7-7_12_29_57.mp3', 4],
-'despacito': ['/home/ubuntu/my-bot/static/ttsMP3.com_VoiceText_2020-7-7_12_29_28.mp3', 1],
-'yeah yeah': ['/home/ubuntu/my-bot/static/ttsMP3.com_VoiceText_2020-7-7_12_28_43.mp3', 1],
-'pewds': ['/home/ubuntu/my-bot/static/Pewdiepie says What A Fking N Word.mp3', 2]}
-
+OPTIONS = {
+    "1️⃣": 0,
+    "2⃣": 1,
+    "3⃣": 2,
+    "4⃣": 3,
+    "5⃣": 4,
+}
 ytdl_format_options = {
     'format': 'bestaudio/best',
     'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
     'extractaudio': True,
     'audioformat': 'mp3',
     'restrictfilenames': True,
-    'noplaylist': True,
+    'noplaylist': False,
     'nocheckcertificate': True,
     'ignoreerrors': False,
     'logtostderr': False,
     'quiet': True,
     'no_warnings': True,
     'default_search': 'auto',
-    'source_address': '0.0.0.0' # bind to ipv4 since ipv6 addresses cause issues sometimes
+    'source_address': '0.0.0.0',
+    "force-generic-extractor": True
 }
 
 ffmpeg_options = {
@@ -61,7 +59,11 @@ ffmpeg_options = {
     'options': '-vn'
 }
 
-            
+
+class DownloadError(commands.CommandError):
+    pass
+
+
 class YTDLSource(discord.PCMVolumeTransformer):
     def __init__(self, source, *, data, volume=0.5):
         super().__init__(source, volume)
@@ -70,7 +72,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
         self.title = data.get('title')
         self.url = data.get('url')
         self.uploader = data.get('uploader')
-        self.duration= self.parse_duration(int(data.get('duration')))
+        self.duration = self.parse_duration(int(data.get('duration')))
         self.queueurl = data.get("webpage_url")
 
     @classmethod
@@ -80,12 +82,13 @@ class YTDLSource(discord.PCMVolumeTransformer):
             data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=not stream))
             if 'entries' in data:
                 data = data['entries'][0]
-
+            if data is None:
+                return "Couldn't find anything that matches `{}`".format(url)
             filename = data['url'] if stream else ytdl.prepare_filename(data)
             return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_options), data=data)
-        except:
-            return 'Query not found'
-    
+        except youtube_dl.DownloadError as e:
+            return "An unexpected error occurred, please try again."
+
     @staticmethod
     def parse_duration(duration: int):
         if duration == 0:
@@ -108,7 +111,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
                 duration.append('0{}'.format(minutes))
             elif minutes >= 10:
                 duration.append('{}'.format(minutes))
-        if minutes <= 0 and hours > 0:
+        if minutes <= 0 < hours:
             duration.append('00')
         elif minutes <= 0:
             duration.append('0')
@@ -121,6 +124,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
                 duration.append('{}'.format(seconds))
         return ':'.join(duration)
 
+
 class Music(commands.Cog):
     def __init__(self, bot):
         self.client = bot
@@ -129,196 +133,181 @@ class Music(commands.Cog):
         self.autoplay = False
         self.volume = 0.5
 
+    def requester_check():
+        def predicate(ctx):
+            return ctx.message.author == ctx.voice_client.source.requester
+        return commands.check(predicate)
+
     async def song(self, ctx, url, ytdl):
         member = ctx.message.author
-        if not member.voice == None:
+        if member.voice is not None:
             if ctx.voice_client is None:
                 voice_channel = member.voice.channel
                 vc = await voice_channel.connect()
                 if not vc.is_playing():
-                    player = await YTDLSource.from_url(url, ytdl = ytdl, loop=self.client.loop, stream=True)
-                    if player == 'Query not found':
+                    player = await YTDLSource.from_url(url, ytdl=ytdl, loop=self.client.loop, stream=True)
+                    if isinstance(player, str):
                         await ctx.send(player)
-                        return
+                        raise DownloadError
                     vc.play(player, after=lambda e: self.play_next(ctx))
-                    author.append(ctx.message.author)
-                    now.append(player)
+                    player.requester = ctx.message.author
                     await ctx.message.add_reaction('⏯')
                     await ctx.send('Now playing: **{}** ({}). Requested by: `{}`'.format(player.title, player.duration, str(ctx.message.author.display_name)))
+                    await self.client.change_presence(activity=discord.Game(name="Now playing: {} ({})".format(player.title, player.duration)))
                 else:
-                    player = await YTDLSource.from_url(url, ytdl = ytdl,loop=self.client.loop, stream=True)
-                    if player == 'Query not found':
-                        await ctx.send(player)
-                        return
-                    queue.append(player)
-                    now.append(player)
-                    author.append(ctx.message.author)
-                    await ctx.send('**{}** ({}) queued. Position in queue: `{}`'.format(player.title, player.duration, len(queue)))
+                    if not self.autoplay:
+                        player = await YTDLSource.from_url(url, ytdl=ytdl, loop=self.client.loop, stream=True)
+                        if isinstance(player, str):
+                            await ctx.send(player)
+                            raise DownloadError
+                        player.requester = ctx.message.author
+                        queue.append(player)
+                        await ctx.send('**{}** ({}) queued. Position in queue: `{}`'.format(player.title, player.duration, len(queue)))
+                    else:
+                        player = await YTDLSource.from_url(url, ytdl=ytdl, loop=self.client.loop, stream=True)
+                        if isinstance(player, str):
+                            await ctx.send(player)
+                            raise DownloadError
+                        player.requester = ctx.message.author
+                        queue.insert(0, player)
+                        await ctx.send(
+                            '**{}** ({}) queued. Position in queue: `1`'.format(player.title, player.duration))
             else:
                 if not ctx.voice_client.is_playing():
-                    player = await YTDLSource.from_url(url, ytdl = ytdl, loop=self.client.loop, stream=True)
-                    if player == 'Query not found':
+                    player = await YTDLSource.from_url(url, ytdl=ytdl, loop=self.client.loop, stream=True)
+                    if isinstance(player, str):
                         await ctx.send(player)
-                        return
+                        raise DownloadError
                     ctx.voice_client.play(player, after=lambda e: self.play_next(ctx))
-                    author.append(ctx.message.author)
-                    now.append(player)
+                    player.requester = ctx.message.author
                     await ctx.message.add_reaction('⏯')
-                    await ctx.send('Now playing: **{}** ({}). Requested by: `{}`'.format(player.title, player.duration, str(ctx.message.author.display_name)))
+                    await ctx.send('Now playing: **{}** ({}). Requested by: `{}`'.format(player.title, player.duration,
+                                                                                         str(ctx.message.author.display_name)))
+                    await self.client.change_presence(
+                        activity=discord.Game(name="Now playing: {} ({})".format(player.title, player.duration)))
                 else:
-                    player = await YTDLSource.from_url(url, ytdl = ytdl,loop=self.client.loop, stream=True)
-                    if player == 'Query not found':
-                        await ctx.send(player)
-                        return
-                    queue.append(player)
-                    now.append(player)
-                    author.append(ctx.message.author)
-                    await ctx.send('**{}** ({}) queued. Position in queue: `{}`'.format(player.title, player.duration, len(queue)))
+                    if not self.autoplay:
+                        player = await YTDLSource.from_url(url, ytdl=ytdl, loop=self.client.loop, stream=True)
+                        if isinstance(player, str):
+                            await ctx.send(player)
+                            raise DownloadError
+                        player.requester = ctx.message.author
+                        queue.append(player)
+                        await ctx.send(
+                            '**{}** ({}) queued. Position in queue: `{}`'.format(player.title, player.duration,
+                                                                                 len(queue)))
+                    else:
+                        player = await YTDLSource.from_url(url, ytdl=ytdl, loop=self.client.loop, stream=True)
+                        if isinstance(player, str):
+                            await ctx.send(player)
+                            raise DownloadError
+                        player.requester = ctx.message.author
+                        queue.insert(0, player)
+                        await ctx.send(
+                            '**{}** ({}) queued. Position in queue: `1`'.format(player.title, player.duration))
         else:
-            await ctx.send('You are not connected to a voice channel', delete_after = 20)
+            await ctx.send('You are not connected to a voice channel', delete_after=20)
 
     async def cog_command_error(self, ctx, error):
+        await ctx.send(str(error).strip('Command raised an exception: '), delete_after=20)
         if isinstance(error, commands.CommandOnCooldown):
-            await ctx.send(error, delete_after = 20)
-        
+            await ctx.send(error, delete_after=20)
+
     @commands.command()
     async def lyrics(self, ctx, *args):
         genius = Genius()
         if not str(args) == '()':
             lyrics = genius.from_query(' '.join(args))
             lyric = lyrics.split("\n\n")
-            embed = discord.Embed(title='Lyrics for ' + ' '.join(args), color = 0x1d68e0)
+            embed = discord.Embed(title='Lyrics for ' + ' '.join(args), color=ctx.message.author.color.value)
         else:
-            if not ctx.voice_client is None:
-                lyrics = genius.from_query(now[-len(queue)-1].title)
-                lyric = lyrics.split("\n\n")
-                embed = discord.Embed(title='Lyrics for ' + now[-len(queue)-1].title, color = 0x1d68e0)
+            if ctx.voice_client is not None:
+                try:
+                    lyrics = genius.from_query(ctx.voice_client.source.title)
+                    lyric = lyrics.split("\n\n")
+                    embed = discord.Embed(title='Lyrics for ' + ctx.voice_client.source.title, color=ctx.message.author.color.value)
+                except:
+                    await ctx.send('Genius could not find `{}`. Please retry and provide the song name.'.format(ctx.voice_client.source.title))
             else:
-                await ctx.send('No song is currently playing', delete_after = 20)
+                await ctx.send('No song is currently playing', delete_after=20)
         for l in lyric:
             if len(l) >= 1000:
-                print('big')
-                res_first, res_second = l[:len(l)//2],  l[len(l)//2:]
-                print(len(res_first))
-                print(len(res_second))
-                embed.add_field(name= '\u200b',value= res_first, inline=False)
-                embed.add_field(name= '\u200b',value= res_second, inline=False)
+                res_first, res_second = l[:len(l) // 2], l[len(l) // 2:]
+                embed.add_field(name='\u200b', value=res_first, inline=False)
+                embed.add_field(name='\u200b', value=res_second, inline=False)
             else:
-                embed.add_field(name= '\u200b',value= l, inline=False)
+                embed.add_field(name='\u200b', value=l, inline=False)
         await ctx.send(content=None, embed=embed)
-    
-    @commands.command()
-    async def purge(self, ctx, limit: int = 100, user: discord.Member = None, *, matches: str = None):
-        def check_msg(msg):
-            if msg.id == ctx.message.id:
-                return True
-            if user is not None:
-                if msg.author.id != user.id:
-                    return False
-            if matches is not None:
-                if matches not in msg.content:
-                    return False
-            return True
-        deleted = await ctx.channel.purge(limit=limit, check=check_msg)
-        msg = await ctx.send('Purged ' + len(deleted) + 'messages')
-        await asyncio.sleep(2)
-        await msg.delete()
 
     @commands.command()
+    @commands.check_any(commands.has_role('DJ'), commands.has_permissions(administrator = True), requester_check())
     async def pause(self, ctx):
-        if not ctx.voice_client is None:
+        if ctx.voice_client is not None:
             await ctx.message.add_reaction('⏸')
-            ctx.voice_client.pause()   
+            ctx.voice_client.pause()
         else:
-            await ctx.send('Not connected to a voice channel', delete_after = 20)
-    
+            await ctx.send('Not connected to a voice channel', delete_after=20)
+
     @commands.command()
+    @commands.check_any(commands.has_role('DJ'), commands.has_permissions(administrator = True), requester_check())
     async def shuffle(self, ctx):
         random.shuffle(queue)
         await ctx.message.add_reaction('🔀')
 
     @commands.command()
+    @commands.check_any(commands.has_role('DJ'), commands.has_permissions(administrator = True), requester_check())
     async def resume(self, ctx):
-        if not ctx.voice_client is None:
+        if ctx.voice_client is not None:
             ctx.voice_client.resume()
             await ctx.message.add_reaction('▶️')
         else:
-            await ctx.send('Not connected to a voice channel', delete_after = 30)
-    
+            await ctx.send('Not connected to a voice channel', delete_after=30)
+
     @commands.command()
+    @commands.check_any(commands.has_role('DJ'), commands.has_permissions(administrator = True), requester_check())
     async def stop(self, ctx):
-        if not ctx.voice_client is None:
+        if ctx.voice_client is not None:
             await ctx.voice_client.disconnect()
-            loopQueue.clear()
             queue.clear()
             await ctx.message.add_reaction('🛑')
         else:
-            await ctx.send('Not connected to a voice channel', delete_after = 20)
-    
-    @commands.command()
-    async def clear(self, ctx):
-        loopQueue.clear()
-        queue.clear()
-        await ctx.send('Cleared', delete_after = 20)
-        await ctx.message.add_reaction('🍑')
-    
-    
-    @commands.command(aliases = ['p'])
-    async def play(self, ctx, *args):
-        if not str(args) == '()':
-            ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
-            if not self.loop:
-                if 'https://open.spotify.com/track' in ' '. join(args):
-                    searcher = MetadataSearch(' '. join(args))
-                    metadata = searcher.on_youtube_and_spotify()
-                    await self.song(ctx,metadata["external_urls"]["youtube"], ytdl)
-                    loopQueue.append(metadata["external_urls"]["youtube"])              
-                else:
-                    ytdl_format_options['default_search'] = 'ytsearch'
-                    ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
-                    await self.song(ctx,' '. join(args), ytdl) 
-                    loopQueue.append(' '.join(args))
-            else:
-                await ctx.send('Music is looping, unloop to add music to the queue', delete_after = 20)
-        else:
-            ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
-            youtube = build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION,
-            developerKey=DEVELOPER_KEY)
-            runOnce = True
-            request = youtube.search().list(
-                part="snippet",
-                maxResults=1,
-                order="relevance",
-                regionCode="US",
-                relevanceLanguage="en",
-                type="video",
-                videoCategoryId="10"
-            ).execute()
+            await ctx.send('Not connected to a voice channel', delete_after=20)
 
-            for search_result in request.get('items', []):
-                if runOnce:
-                    await self.song(ctx, 'https://www.youtube.com/watch?v=' + search_result['id']['videoId'], ytdl)
-                    runOnce = False
-                else:
-                    player = await YTDLSource.from_url('https://www.youtube.com/watch?v=' + search_result['id']['videoId'], ytdl = ytdl, loop=self.client.loop, stream=True)
-                    queue.append(player)
-                    now.append(player)
-                    author.append(ctx.message.author)
-                    
-    @commands.command(aliases = ['sc']) 
+    @commands.command()
+    @commands.check_any(commands.has_role('DJ'), commands.has_permissions(administrator = True), requester_check())
+    async def clear(self, ctx):
+        queue.clear()
+        await ctx.send('Cleared', delete_after=20)
+        await ctx.message.add_reaction('🍑')
+
+    @commands.command(aliases=['p'])
+    async def play(self, ctx, *args):
+        ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
+        if not self.loop:
+            if 'https://open.spotify.com/track' in ' '.join(args):
+                searcher = MetadataSearch(' '.join(args))
+                metadata = searcher.on_youtube_and_spotify()
+                await self.song(ctx, metadata["external_urls"]["youtube"], ytdl)
+            else:
+                ytdl_format_options['default_search'] = 'ytsearch'
+                ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
+                await self.song(ctx, ' '.join(args), ytdl)
+        else:
+            await ctx.send('Music is looping, unloop to add music to the queue', delete_after=20)
+
+    @commands.command(aliases=['sc'])
     async def soundcloud(self, ctx, *args):
         if not self.loop:
             ytdl_format_options['default_search'] = 'scsearch'
             ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
-            await self.song(ctx,' '. join(args), ytdl)   
-            loopQueue.append(' '.join(args))
+            await self.song(ctx, ' '.join(args), ytdl)
         else:
-            await ctx.send('Music is looping, unloop to add music to the queue', delete_after = 20)
+            await ctx.send('Music is looping, unloop to add music to the queue', delete_after=20)
 
     @commands.command()
     async def search(self, ctx, *args):
         youtube = build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION,
-            developerKey=DEVELOPER_KEY)
+                        developerKey=DEVELOPER_KEY)
 
         if self.searchClear:
             urls.clear()
@@ -330,11 +319,11 @@ class Music(commands.Cog):
             part='id,snippet',
             type='video',
             maxResults=5,
-            safeSearch = 'strict'
+            safeSearch='strict'
         ).execute()
 
         for i, search_result in enumerate(search_response.get('items', [])):
-            request = youtube.videos().list( 
+            request = youtube.videos().list(
                 part="contentDetails",
                 id=search_result['id']['videoId']).execute()
 
@@ -345,78 +334,60 @@ class Music(commands.Cog):
                 del duration1[0]
 
             duration = ':'.join(duration1)
-            videos.append('{}. {} - {} ({})'.format(i+1, search_result['snippet']['title'], search_result['snippet']['channelTitle'], str(duration)))
+            videos.append('{}. {} - {} ({})'.format(i + 1, search_result['snippet']['title'],
+                                                    search_result['snippet']['channelTitle'], str(duration)))
             urls.append('https://www.youtube.com/watch?v=' + search_result['id']['videoId'])
-            
+
         self.searchClear = True
-        self.sent = await ctx.send('Choose the number of the video you would like + $.\n' + html.unescape('\n'.join(videos) + '\n'))
 
-    @commands.command(name = '1')
-    async def one(self, ctx):
-        self.searchClear = False
-        url = urls[0]
-        ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
-        await self.sent.delete()
-        await self.song(ctx,url, ytdl)  
-        urls.clear()
-        videos.clear()
-        loopQueue.append(url)
-    
-    @commands.command(name = '2')
-    async def two(self, ctx):
-        self.searchClear = False
-        url = urls[1]
-        ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
-        await self.sent.delete()
-        await self.song(ctx,url, ytdl)        
-        urls.clear()
-        videos.clear()
-        loopQueue.append(url)
+        def _check(r, u):
+            return (
+                    r.emoji in OPTIONS.keys()
+                    and u == ctx.author
+                    and r.message.id == msg.id
+            )
 
-    @commands.command(name = '3')
-    async def three(self, ctx):
-        self.searchClear = False
-        url = urls[2]
-        ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
-        await self.sent.delete()
-        await self.song(ctx,url, ytdl)  
-        urls.clear()
-        videos.clear()
-        loopQueue.append(url)
+        embed = discord.Embed(
+            title="Choose the number of the video you would like.",
+            description=(
+                html.unescape('\n'.join(videos)
+                )
+            ),
+            colour=ctx.message.author.color.value
+        )
+        embed.set_author(name="Search Results")
+        embed.set_footer(text=f"Invoked by {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
 
-    @commands.command(name = '4')
-    async def four(self, ctx):
-        self.searchClear = False
-        url = urls[3]
-        ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
-        await self.sent.delete()
-        await self.song(ctx,url, ytdl)  
-        urls.clear()
-        videos.clear()
-        loopQueue.append(url)
+        msg = await ctx.send(embed=embed)
+        for emoji in list(OPTIONS.keys())[:min(len(videos), len(OPTIONS))]:
+            await msg.add_reaction(emoji)
 
-    @commands.command(name = '5')
-    async def five(self, ctx):
-        self.searchClear = False
-        url = urls[4]
-        ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
-        await self.sent.delete()
-        await self.song(ctx,url, ytdl)  
-        urls.clear()
-        videos.clear()
-        loopQueue.append(url)
+        try:
+            reaction, _ = await self.client.wait_for("reaction_add", timeout=60.0, check=_check)
+        except asyncio.TimeoutError:
+            await msg.delete()
+            await ctx.message.delete()
+        else:
+            await msg.delete()
+            self.searchClear = False
+            url = urls[int(OPTIONS[reaction.emoji])]
+            ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
+            await self.song(ctx, url, ytdl)
+            urls.clear()
+            videos.clear()
 
     @commands.command()
     async def cancel(self, ctx):
         urls.clear()
         videos.clear()
         await self.sent.delete()
-        await ctx.send('Canceled', delete_after = 20)
+        await ctx.send('Canceled', delete_after=20)
 
-    @commands.command(aliases = ['s'])
+    @commands.command(aliases=['s'])
+    @commands.check_any(commands.has_role('DJ'), commands.has_permissions(administrator = True), requester_check())
     async def skip(self, ctx):
         if not self.loop:
-            if not ctx.voice_client is None:
+            if ctx.voice_client is not None:
                 if len(queue) >= 1:
                     if not isinstance(ctx, discord.guild.Guild):
                         await ctx.message.add_reaction('⏭')
@@ -424,83 +395,108 @@ class Music(commands.Cog):
                     ctx.voice_client.play(source=queue[0], after=lambda e: self.play_next(ctx))
                     ctx.voice_client.source.volume = self.volume
                     if not isinstance(ctx, discord.guild.Guild):
-                        asyncio.run_coroutine_threadsafe(ctx.send('Now playing: **{}** ({}). Requested by: `{}`'.format(queue[0].title, queue[0].duration,str(author[-len(queue)-1].display_name))), self.client.loop)
+                        asyncio.run_coroutine_threadsafe(ctx.send(
+                            'Now playing: **{}** ({}). Requested by: `{}`'.format(queue[0].title, queue[0].duration,
+                                                                                  str(queue[0].requester.display_name))),
+                            self.client.loop)
+                        await self.client.change_presence(
+                            activity=discord.Game(name="Now playing: {} ({})".format(queue[0].title, queue[0].duration)))
                     else:
                         channel = ctx.get_channel(725907147904253993)
-                        asyncio.run_coroutine_threadsafe(channel.send('Now playing: **{}** ({}). Requested by: `{}`'.format(queue[0].title, queue[0].duration,str(author[-len(queue)-1].display_name))), self.client.loop)
+                        asyncio.run_coroutine_threadsafe(channel.send(
+                            'Now playing: **{}** ({}). Requested by: `{}`'.format(queue[0].title, queue[0].duration,
+                                                                                  str(queue[0].requester.display_name))),
+                            self.client.loop)
+                        await self.client.change_presence(
+                            activity=discord.Game(name="Now playing: {} ({})".format(queue[0].title, queue[0].duration)))
                     del queue[0]
-                    
+
                 else:
                     ctx.voice_client.pause()
+                    await self.client.change_presence(
+                        activity=discord.Game(name="$help | Carti's stummy hurts"))
                     if not isinstance(ctx, discord.guild.Guild):
-                        await ctx.send('No songs in queue right now.', delete_after = 20)
+                        await ctx.send('No songs in queue right now.', delete_after=20)
                     else:
                         channel = ctx.get_channel(725907147904253993)
-                        await channel.send('No songs in queue right now.', delete_after = 20)
+                        await channel.send('No songs in queue right now.', delete_after=20)
             else:
-                await ctx.send('Not connected to a voice channel', delete_after = 20)
+                await ctx.send('Not connected to a voice channel', delete_after=20)
         else:
             if not isinstance(ctx, discord.guild.Guild):
-                await ctx.send('Music is currently looping, please unloop to skip', delete_after = 20)
+                await ctx.send('Music is currently looping, please unloop to skip', delete_after=20)
             else:
                 channel = ctx.get_channel(725907147904253993)
-                await channel.send('Music is currently looping, please unloop to skip', delete_after = 20)
+                await channel.send('Music is currently looping, please unloop to skip', delete_after=20)
 
-    @commands.command(name = 'queue', aliases = ['q'])
+    @commands.command(name='queue', aliases=['q'])
     async def _queue(self, ctx):
-        field = []
-        if not self.loop:
-            embed = discord.Embed(title="Queue", color = 0x1d68e0)
-            embed.add_field(value= '{} | `{} Requested by: {}`' .format(now[-len(queue)-1].title, now[-len(queue)-1].duration, str(author[-len(queue)-1].display_name)), name= '__Currently Playing:__', inline=False)
+        try:
+            field = []
+            if not self.loop:
+                embed = discord.Embed(title="Queue", color=ctx.message.author.color.value)
+                embed.add_field(
+                    value='{} | `{} Requested by: {}`'.format(ctx.voice_client.source.title, ctx.voice_client.source.duration,
+                                                              str(ctx.voice_client.source.requester.display_name)),
+                    name='__Currently Playing:__', inline=False)
 
-            if len(queue) >= 1:
-                for i in range(len(queue)):
-                    field.append('`{}`. {} | `{} Requested by: {}`' .format(i + 1, queue[i].title,queue[i].duration,str(author[-i-1].display_name)))
-                firstpage = field[0:10]
-                embed.add_field(name= '__Up Next:__', value = '\n\n'.join(firstpage), inline = False)
-                embed.set_footer(text= "{} songs in queue | Page 1 | 1-10".format(len(queue)), icon_url=ctx.message.author.avatar_url)
-            await ctx.send(content=None, embed=embed)
-        else:
-            await ctx.send('Music is looping currently', delete_after = 20)
+                if len(queue) >= 1:
+                    for i in range(len(queue)):
+                        field.append('`{}`. {} | `{} Requested by: {}`'.format(i + 1, queue[i].title, queue[i].duration,
+                                                                               str(queue[i].requester.display_name)))
+                    firstpage = field[0:10]
+                    embed.add_field(name='__Up Next:__', value='\n\n'.join(firstpage), inline=False)
+                    embed.set_footer(text="{} songs in queue | Page 1 | 1-10".format(len(queue)),
+                                     icon_url=ctx.message.author.avatar_url)
+                await ctx.send(content=None, embed=embed)
+            else:
+                await ctx.send('Music is looping currently', delete_after=20)
+        except:
+            await ctx.send('No songs in queue.')
 
     @commands.command()
+    @commands.check_any(commands.has_role('DJ'), commands.has_permissions(administrator = True), requester_check())
     async def autoplay(self, ctx):
         self.autoplay = not self.autoplay
         ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
         if self.autoplay:
             await ctx.send('Autoplay on!')
             youtube = build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION,
-            developerKey=DEVELOPER_KEY)
-            url = self.remove_prefix(now[-len(queue)-1].queueurl, 'https://www.youtube.com/watch?v=')
+                            developerKey=DEVELOPER_KEY)
+            url = self.remove_prefix(ctx.voice_client.source.queueurl, 'https://www.youtube.com/watch?v=')
             search_response = youtube.search().list(
-                relatedToVideoId= url,
+                relatedToVideoId=url,
                 part='snippet',
                 type='video',
                 maxResults=10,
-                safeSearch = 'strict'
+                safeSearch='strict'
             ).execute()
 
             for search_result in search_response.get('items', []):
-                player = await YTDLSource.from_url('https://www.youtube.com/watch?v=' + search_result['id']['videoId'], ytdl = ytdl, loop=self.client.loop, stream=True)
+                player = await YTDLSource.from_url('https://www.youtube.com/watch?v=' + search_result['id']['videoId'],
+                                                   ytdl=ytdl, loop=self.client.loop, stream=True)
+                player.requester = ctx.message.author
                 queue.append(player)
-                now.append(player)
-                author.append(ctx.message.author)
+
         else:
             await ctx.send('Autoplay off!')
 
-    @commands.command(aliases = ['replay'])
+    @commands.command(aliases=['replay'])
+    @commands.check_any(commands.has_role('DJ'), commands.has_permissions(administrator = True), requester_check())
     async def restart(self, ctx):
         ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
-        player = await YTDLSource.from_url(loopQueue[-len(queue) - 1], ytdl = ytdl,loop=self.client.loop, stream=True)
+        player = await YTDLSource.from_url(ctx.voice_client.source.title, ytdl=ytdl, loop=self.client.loop, stream=True)
         ctx.voice_client.pause()
         ctx.voice_client.play(source=player, after=lambda e: self.play_next(ctx))
         await ctx.message.add_reaction('🔁')
-    
-    @commands.command(aliases = ['r'])
+
+    @commands.command(aliases=['r'])
+    @commands.check_any(commands.has_role('DJ'), commands.has_permissions(administrator = True), requester_check())
     async def remove(self, ctx, index: int):
         if len(queue) == 0:
             await ctx.send('Empty queue.')
         else:
+            await ctx.send('Removed `{} - {}`'.format(queue[index-1].title, queue[index-1].author))
             queue.pop(index - 1)
             await ctx.message.add_reaction('💥')
 
@@ -508,43 +504,44 @@ class Music(commands.Cog):
         if text.startswith(prefix):
             return text[len(prefix):]
         return text
-    
 
-    @commands.command(aliases = ['l'])
-    async def loop(self, ctx, i = 20):
+    @commands.command(aliases=['pspot', 'pspotify'])
+    @commands.check_any(commands.has_role('DJ'), commands.has_permissions(administrator = True), requester_check())
+    async def play_spotify(self, ctx):
+        if not self.loop:
+            member = ctx.message.author
+            ytdl_format_options['default_search'] = 'ytsearch'
+            ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
+            for activity in member.activities:
+                if isinstance(activity, discord.Spotify):
+                    await self.song(ctx, activity.title + " " + activity.artists[0], ytdl)
+        else:
+            await ctx.send('Music is looping, unloop to add music to the queue', delete_after=20)
+
+    @commands.command(aliases=['l'])
+    @commands.check_any(commands.has_role('DJ'), commands.has_permissions(administrator = True), requester_check())
+    async def loop(self, ctx, i=20):
         self.loop = not self.loop
         ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
         if self.loop:
             await ctx.message.add_reaction('🔁')
             for _ in range(i):
-                player = await YTDLSource.from_url(loopQueue[-1], ytdl = ytdl,loop=self.client.loop, stream=True)
+                player = await YTDLSource.from_url(ctx.voice_client.source.title, ytdl=ytdl, loop=self.client.loop, stream=True)
                 queue.append(player)
-            loopQueue.clear()
         else:
             queue.clear()
-            loopQueue.clear()
-            await ctx.send('Stopping loop', delete_after = 30)
+            await ctx.send('Stopping loop', delete_after=30)
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
-        if before.channel is None and after.channel is not None:
-            if str(member) == 'el b1ACk#8323':
-                choice = random.choice(list(voicePaths.keys()))
-                voice = await member.voice.channel.connect()
-                voice.play(discord.FFmpegPCMAudio(voicePaths[choice][0]))
-                await asyncio.sleep(voicePaths[choice][1])
-                await voice.disconnect()
         if before.channel is not None and after.channel is None:
             if str(member) == 'alBY#4055':
                 queue.clear()
-                loopQueue.clear()
-                now.clear()
+                self.autoplay = False
         if str(member) == 'alBY#4055':
             if after.mute:
                 await self.skip(member.guild)
-                asyncio.sleep(2)
                 await member.edit(mute=False)
-
 
     def play_next(self, ctx):
         if len(queue) >= 1:
@@ -552,26 +549,38 @@ class Music(commands.Cog):
             ctx.voice_client.source.volume = self.volume
             if not self.loop:
                 if not isinstance(ctx, discord.guild.Guild):
-                    asyncio.run_coroutine_threadsafe(ctx.send('Now playing: **{}** ({}). Requested by: `{}`'.format(queue[0].title, queue[0].duration,str(author[-len(queue)-1].display_name))), self.client.loop)
+                    asyncio.run_coroutine_threadsafe(ctx.send(
+                        'Now playing: **{}** ({}). Requested by: `{}`'.format(queue[0].title, queue[0].duration,
+                                                                              str(queue[0].requester.display_name))),
+                        self.client.loop)
+                    asyncio.run_coroutine_threadsafe(self.client.change_presence(
+                        activity=discord.Game(name="Now playing: {} ({})".format(queue[0].title, queue[0].duration))), self.client.loop)
                 else:
                     channel = ctx.get_channel(725907147904253993)
-                    asyncio.run_coroutine_threadsafe(channel.send('Now playing: **{}** ({}). Requested by: `{}`'.format(queue[0].title, queue[0].duration,str(author[-len(queue)-1].display_name))), self.client.loop)
+                    asyncio.run_coroutine_threadsafe(channel.send(
+                        'Now playing: **{}** ({}). Requested by: `{}`'.format(queue[0].title, queue[0].duration,
+                                                                              str(queue[0].requester.display_name))),
+                        self.client.loop)
+                    asyncio.run_coroutine_threadsafe(self.client.change_presence(
+                        activity=discord.Game(name="Now playing: {} ({})".format(queue[0].title, queue[0].duration))), self.client.loop)
             del queue[0]
         else:
-            now.clear()
-            loopQueue.clear()
             self.autoplay = False
+            asyncio.run_coroutine_threadsafe(self.client.change_presence(
+                activity=discord.Game(name="$help | Carti's stummy hurts")),
+                self.client.loop)
             asyncio.run_coroutine_threadsafe(asyncio.sleep(90), self.client.loop)
-            if not ctx.voice_client.is_playing():
-                asyncio.run_coroutine_threadsafe(ctx.voice_client.disconnect(), self.client.loop)
+            asyncio.run_coroutine_threadsafe(ctx.voice_client.disconnect(), self.client.loop)
 
-
-    @commands.command(aliases = ['v'])
+    @commands.command(aliases=['v'])
+    @commands.check_any(commands.has_role('DJ'), commands.has_permissions(administrator = True), requester_check())
     async def volume(self, ctx, volume: int):
         if ctx.voice_client is None:
-            return await ctx.send("Not connected to a voice channel.", delete_after = 20)
-            
+            return await ctx.send("Not connected to a voice channel.", delete_after=20)
+
         ctx.voice_client.source.volume = volume / 100
         self.volume = volume / 100
         await ctx.send("Changed volume to **{}%**".format(volume))
-    
+
+def setup(client):
+    client.add_cog(Music(client))
