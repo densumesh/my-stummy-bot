@@ -11,8 +11,6 @@ import yfinance as yf
 import matplotlib.pyplot as plt
 import json
 from better_profanity import profanity
-import smtplib
-import pymongo
 import base64
 import langcodes
 
@@ -286,7 +284,7 @@ class Extras(commands.Cog):
     def stockChange(self, stock1):
         response1 = requests.get('https://sandbox.tradier.com/v1/markets/quotes',
                                  params={'symbols': stock1, 'greeks': 'false'},
-                                 headers={'Authorization': 'Bearer RfcIci33DAu7lxb5dKUAjNKDAODy',
+                                 headers={'Authorization': keys['TRADIER_BEARER_TOKEN'],
                                           'Accept': 'application/json'})
         c1 = response1.json()['quotes']['quote']['change']
         return c1
@@ -307,6 +305,9 @@ class Extras(commands.Cog):
         else:
             await ctx.send('Stop @ing people')
 
+    @commands.command(aliases=['git'])
+    async def github(self, ctx):
+        await ctx.send('https://github.com/densumesh/my-stummy-bot')
 
 def setup(client):
     client.add_cog(Extras(client))
