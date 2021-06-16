@@ -1,0 +1,13 @@
+{
+    "SPOTIFY_CLIENT_ID":"dd587f9d89f54c43a274fa90660cdfd1",
+    "SPOTIFY_CLIENT_SECRET":"797a8619cfcd44efafc63e519a42a4cb",
+    "YOUTUBE_DEVELOPER_KEY":"AIzaSyBoE3k1XNPP6IPDWMhWG38BsEzYsGp5FuA",
+    "DISCORD_TOKEN":"NzI3MjU2NjkxMzIxODY0MjUz.XvpMkg.E_Kv0OnIFWhNv1YFlgJcmjbIf9E",
+    "GOOGLE_API_KEY": "AIzaSyCPy6Sw2_Q3Kc0MBO5Yba58g9HsKt0V7QI",
+    "GOOGLE_CSE_ID":"013223868358354195592:e5od6ee4_nc",
+    "MongoDB_CONNECTION":"mongodb+srv://botuser:puthen123@bot-user.agnas.mongodb.net/botusers?retryWrites=true&w=majority",
+    "GIPHY_API_KEY": "BBNTu65mlxYCMwTULokqcwG62bnYw99O",
+    "REDDIT_CLIENT_ID": "jmj6Nil7ySwIKw",
+    "REDDIT_CLIENT_SECRET": "uynNO5lqrPR7eAeQ1j8wVrZEZ0o",
+    "TRADIER_BEARER_TOKEN": "Bearer RfcIci33DAu7lxb5dKUAjNKDAODy"
+}
